@@ -11,7 +11,6 @@ Options:
 """
 
 import socket
-from struct import pack
 
 """
 	opcode  operation
@@ -114,6 +113,7 @@ As shown above the protocol can be seen in action on the last 6 lines or so.
   of the connection on sending the final ACK.
 
 """
+MAXSIZE = 508
 TERMINATING_DATA_LENGTH = 512
 TFTP_TRANSFER_MODE = b'netascii'
 
@@ -136,7 +136,7 @@ sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 server_address = ('localhost', 69)
 
 
-def send_rq(filename, mode):
+def send_rq(filename, mode, typeR):
 	"""
 	This function constructs the request packet in the format below.
 	Demonstrates how we can construct a packet using bytearray.
@@ -154,8 +154,12 @@ def send_rq(filename, mode):
 	"""
 	request = bytearray()
 	# First two bytes opcode - for read request
-	request.append(0)
-	request.append(1)
+	if (typeR == "RRQ"):
+		request.append(0)
+		request.append(1)
+	else:
+		request.append(0)
+		request.append(2)
 	# append the filename you are interested in
 	filename = bytearray(filename.encode('utf-8'))
 	request += filename
@@ -167,7 +171,7 @@ def send_rq(filename, mode):
 	# append the last byte
 	request.append(0)
 
-	print("Request", request)
+	print("Send request")
 	sent = sock.sendto(request, server_address)
 
 
@@ -188,7 +192,6 @@ def send_ack(ack_data, server):
 	ack = bytearray(ack_data)
 	ack[0] = 0
 	ack[1] = TFTP_OPCODES['ack']
-	print(ack)
 	sock.sendto(ack, server)
 
 
@@ -237,29 +240,105 @@ def main():
 	if(typeR == "RRQ"): #if is RRQ
 		
 		# Send request
-		send_rq(filename, mode)
+		send_rq(filename, mode, typeR)
 
-		# Open file locally with the same name as that of the requested file from server
-		file = open(filename, "wb")
-		while True:
-			# Wait for the data from the server
-			data, server = sock.recvfrom(600)
+		if(mode == "octet"):
+			# Open file locally with the same name as that of the requested file from server
+			file = open(filename, "wb")
+			while True:
+				# Wait for the data from the server
+				data, server = sock.recvfrom(600)
 
-			if server_error(data):
-				error_code = int.from_bytes(data[2:4], byteorder='big')
-				print(server_error_msg[error_code])
-				break
-			send_ack(data[0:4], server)
-			content = data[4:]
-			# print(f"Content : {content}")
-			file.write(content)
-			# print(f"## Data ##: {data[0:4]} : {len(data)}")
-			if len(data) < TERMINATING_DATA_LENGTH:
-				break
+				if server_error(data):
+					error_code = int.from_bytes(data[2:4], byteorder='big')
+					print(server_error_msg[error_code])
+					break
+
+				print("Send ack")
+				send_ack(data[0:4], server)
+				content = data[4:] 
+
+				file.write(content)
+
+				if len(data) < TERMINATING_DATA_LENGTH:
+					print("Transfer complete")
+					file.close()
+					break
+
+		elif (mode == "netascii"):
+			pass
+
+		else:
+			pass
 
 	else: #if is WRQ
-		pass
 
+		if(mode == "octet"):
+			try:
+				file = open(filename, "rb")
+			except:
+				print("ERROR, File not found")
+				exit()
+
+			# Send request
+			send_rq(filename, mode, typeR)
+
+			count = 0 # Block number
+
+			while True: # Send the file in blocks
+
+				block = file.read(MAXSIZE) # read the block
+				if not block:
+					if (count == 0):
+						
+						data = bytearray()
+						data.append(0)
+						data.append(3)
+
+						b = bytearray(count.to_bytes(2, 'big'))
+
+						data += b
+
+						print("Send Block #", count)
+
+						sent = sock.sendto(data, server_address)
+						data, server_address = sock.recvfrom(MAXSIZE)
+						
+						if(data[0] == 0 and data[1] == 4 and data[2] == b[0] and data[3] == b[1]):
+							print("ACK of block #", count, '\n')
+
+					print("Transfer complete")
+					file.close()
+					break
+
+				data = bytearray()
+				data.append(0)
+				data.append(3)
+
+				b = bytearray(count.to_bytes(2, 'big'))
+
+				data += b
+
+				data += block
+
+				print("Send Block #", count)
+
+				sent = sock.sendto(data, server_address) # Send the data
+
+				while True: # wait for the ACK
+					data, addr = sock.recvfrom(MAXSIZE)
+					if(data[0] == 0 and data[1] == 4 and data[2] == b[0] and data[3] == b[1]):
+						print("ACK of block #", count, '\n')
+						break
+
+				count += 1
+
+
+		elif(mode == "netascii"):
+			pass
+
+		else:
+			pass
 
 if __name__ == '__main__':
 	main()

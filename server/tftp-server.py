@@ -15,16 +15,16 @@ TFTP_OPCODES = {
 	'error': 5}  # ERROR
 
 
-def extract(data): # Get the filename and mode of the first data (RRQ or WRQ)
+def extract(data): # Get the filename and mode of the first data (RRQ or WRQ packets)
 	filename = ""
 	i = 2
-	while (data[i] != 0):
+	while (data[i] != 0):					# i is the byte position				
 		filename = filename + chr(data[i])
 		i = i + 1
 
 	mode = ""
 	i = i + 1
-	while (data[i] != 0):
+	while (data[i] != 0):					# getting the mode of the data: netascii, octet (bynary) or mail
 		mode = mode + chr(data[i])
 		i = i + 1
 
@@ -79,8 +79,8 @@ server_error_msg = {
 
 
 def main():
-	# Connect and open the port 69
-	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+	# Connect and open the port 69							 # socket.SOCK_DGRAM: type of the connector, DGRAM = UDP , STREAM = TCP
+	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)	 # socket.AF_INET: the domain of the connector, in this case, an IPv4 connector
 	s.bind(("", PORT))
 	print("listening on {}".format(PORT))
 
@@ -88,6 +88,7 @@ def main():
 		data, addr = s.recvfrom(MAXSIZE) #get a data from the port
 		print("{} from {}".format(data, addr))
 
+		#RRQ---------------------------------------------------------------------------------------------
 		if (data[0] == 0 and data[1] == 1): # if first byte is 0 and the second byte is 1, then is RRQ
 			
 			filename, mode = extract(data)
@@ -117,11 +118,11 @@ def main():
 					if not block:
 						if (count == 0):
 						
-							data = bytearray()
+							data = bytearray() 				# Making the DATA Packet
 							data.append(0)
 							data.append(3)
 
-							b = bytearray(count.to_bytes(2, 'big'))
+							b = bytearray(count.to_bytes(2, 'big')) # representing count as bytes big endian
 
 							data += b
 

@@ -133,7 +133,7 @@ TFTP_MODES = {
 
 # Create a UDP socket
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-server_address = ('localhost', 69)
+ip = 'localhost'
 
 
 def send_rq(filename, mode, typeR):
@@ -172,6 +172,9 @@ def send_rq(filename, mode, typeR):
 	request.append(0)
 
 	print("Send request")
+
+	server_address = (ip, 69)
+
 	sent = sock.sendto(request, server_address)
 
 
@@ -223,6 +226,7 @@ server_error_msg = {
 
 
 def main():
+
 	filename = input("insert filename: ")
 	
 	mode = input("insert mode: ")
@@ -236,6 +240,8 @@ def main():
 	if typeR != "RRQ" and typeR != "WRQ":
 		print("Unknown mode - defaulting to [ RRQ ]")
 		typeR = "RRQ"
+
+	server_address = (ip, 69)
 
 	if(typeR == "RRQ"): #if is RRQ
 		

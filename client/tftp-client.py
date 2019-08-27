@@ -227,9 +227,9 @@ server_error_msg = {
 
 def main():
 
-	filename = input("insert filename: ")
+	filename = input("insert filename or mail recipient (example@gmail.com) if you want to send a mail: ")
 	
-	mode = input("insert mode: ")
+	mode = input("insert mode  (octet, netascii, mail): ")
 
 	if mode.lower() not in TFTP_MODES.keys():
 		print("Unknown mode - defaulting to [ netascii ]")
@@ -274,7 +274,29 @@ def main():
 		elif (mode == "netascii"):
 			pass
 
-		else:
+		else: # mail is only for WRQ but for readability it is placed as the same as for netascii
+			
+			# Open file locally with the same name as that of the requested file from server
+			file = open(filename, "w")
+			while True:
+				# Wait for the data from the server
+				data, server = sock.recvfrom(600)
+
+				if server_error(data):
+					error_code = int.from_bytes(data[2:4], byteorder='big')
+					print(server_error_msg[error_code])
+					break
+
+				print("Send ack")
+				send_ack(data[0:4], server)
+				content = data[4:] 
+
+				file.write(content)
+
+				if len(data) < TERMINATING_DATA_LENGTH:
+					print("Transfer complete")
+					file.close()
+					break
 			pass
 
 	else: #if is WRQ
@@ -343,7 +365,66 @@ def main():
 		elif(mode == "netascii"):
 			pass
 
-		else:
+		else:# mail -----------Here is diferent on filename, which must be an mail recipient, example@hostmail.com
+			try:
+				file = open(filename, "r")
+			except:
+				print("ERROR, File not found")
+				exit()
+
+			# Send request
+			send_rq(filename, mode, typeR)
+
+			count = 0 # Block number
+
+			while True: # Send the file in blocks
+
+				block = file.read(MAXSIZE) # read the block
+				if not block:
+					if (count == 0):
+						
+						data = bytearray()
+						data.append(0)
+						data.append(3)
+
+						b = bytearray(count.to_bytes(2, 'big'))
+
+						data += b
+
+						print("Send Block #", count)
+
+						sent = sock.sendto(data, server_address)						
+						data, server_address = sock.recvfrom(MAXSIZE)
+
+						if(data[0] == 0 and data[1] == 4 and data[2] == b[0] and data[3] == b[1]):
+							print("ACK of block #", count, '\n')
+
+					print("Transfer complete")
+					file.close()
+					break 
+
+				
+				data = bytearray()
+				data.append(0)
+				data.append(3)
+
+				b = bytearray(count.to_bytes(2, 'big'))
+
+				data += b
+
+				data += block
+
+				print("Send Block #", count)
+
+				sent = sock.sendto(data, server_address) # Send the data
+
+				while True: # wait for the ACK
+					data, addr = sock.recvfrom(MAXSIZE)
+					if(data[0] == 0 and data[1] == 4 and data[2] == b[0] and data[3] == b[1]):
+						print("ACK of block #", count, '\n')
+						break
+
+				count += 1
 			pass
 
 if __name__ == '__main__':

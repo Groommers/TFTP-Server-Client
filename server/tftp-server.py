@@ -131,7 +131,7 @@ def main():
 							sent = s.sendto(data, addr)
 
 							data, addr = s.recvfrom(MAXSIZE)
-							if(data[0] == 0 and data[1] == 4 and data[2] == b[0] and data[3] == b[1]):
+							if(data[0] == 0 and data[1] == 4 and data[2] == b[0] and data[3] == b[1]): 
 								print("ACK of block #", count, '\n')
 
 						print("Transfer complete")
@@ -163,12 +163,77 @@ def main():
 
 			elif (mode == "netascii"): # if mode is netascii
 				pass
-
+#--------------------------------------------------------------------------------------------------------
 			else: #if mode is mail
-				pass
+				try:
+					file = open(filename, 'r')
+					
+				except: # No exist the file
+					print("ERROR, File not found")
+					error = bytearray()
+					error.append(0)
+					error.append(5)
+					error.append(0)
+					error.append(1)
+					error += bytearray("".encode('utf-8'))
+					error.append(0)
+					sent = s.sendto(error, addr)
+					exit()
+
+				count = 0 # Block number
+				while True: # Send the file in blocks
+
+					block = file.read(MAXSIZE) # read the block
+					if not block:
+						if (count == 0):
+						# el manejo con bytearray() es general para manejar los paquetes así que sólo hay q cambiar si acaso la parte de DATA de los paquetes
+							data = bytearray() 				# Making the DATA Packet
+							data.append(0)
+							data.append(3)
+
+							b = bytearray(count.to_bytes(2, 'big')) # representing count as bytes big endian
+
+							data += b
+
+							print("Send Block #", count)
+
+							sent = s.sendto(data, addr)
+
+							data, addr = s.recvfrom(MAXSIZE)
+							if(data[0] == 0 and data[1] == 4 and data[2] == b[0] and data[3] == b[1]): 
+								print("ACK of block #", count, '\n')
+
+						print("Transfer complete")
+						file.close()
+						break
+
+					data = bytearray()
+					data.append(0)
+					data.append(3)
+
+					b = bytearray(count.to_bytes(2, 'big'))
+
+					data += b
+
+					data += block
+
+					print("Send Block #", count)
+
+					sent = s.sendto(data, addr) # Send the data
+
+					while True: # wait for the ACK
+						data, addr = s.recvfrom(MAXSIZE)
+						if(data[0] == 0 and data[1] == 4 and data[2] == b[0] and data[3] == b[1]):
+							print("ACK of block #", count, '\n')
+							break
+
+
+					count += 1
 
 
 
+
+		# WRQ----------------------------------------------------------------------------------------------------------------------
 		elif (data[0] == 0 and data[1] == 2): # if the first byte is 0 and the second byte is 2, then is WRQ
 			
 			filename, mode = extract(data)
@@ -196,12 +261,33 @@ def main():
 						file.close()
 						print("Transfer complete")
 						break
-
+#---------------------------------------------------------------------------------------------------
 			elif (mode == "netascii"): # if mode is netascii
 				pass
 
+#---------------------------------------------------------------------------------------------------
 			else: # if mode is mail
-				pass
+				file = open(filename, "w")
+
+				while True:
+					# Wait for the data from the server
+					data, server = s.recvfrom(600)
+
+					if server_error(data):
+						error_code = int.from_bytes(data[2:4], byteorder='big')
+						print(server_error_msg[error_code])
+						break
+
+					send_ack(data[0:4], server, s)
+					print("Send ack")
+					content = data[4:] 
+
+					file.write(content)
+
+					if len(data) < TERMINATING_DATA_LENGTH:
+						file.close()
+						print("Transfer complete")
+						break
 
 
 if __name__ == "__main__":

@@ -162,7 +162,7 @@ def main():
 
 	while True:
 		data, addr = sock.recvfrom(MAXSIZE) #get a data from the port
-		print("{} from {}".format(data, addr))
+		print("\n{} from {}".format(data, addr))
 
 		#RRQ---------------------------------------------------------------------------------------------
 		if (data[0] == 0 and data[1] == 1): # if first byte is 0 and the second byte is 1, then is RRQ
@@ -247,7 +247,82 @@ def main():
 						count += 1
 
 			elif (mode == "netascii"): # if mode is netascii
-				pass
+
+				try:
+					file = open(filename, 'r')
+					
+				except: # No exist the file
+					error = bytearray()
+
+					error.append(0)
+					error.append(5)
+					error.append(0)
+					error.append(1)
+					
+					error += bytearray("".encode('utf-8'))
+
+					error.append(0)
+
+					sent = sock.sendto(error, addr)
+
+					print("ERROR, File not found")
+
+					continue
+
+				count = 0 # Block number
+
+				print("Sending file", filename)
+
+				while True: # Send the file in blocks
+
+					block = file.read(MAXSIZE) # read the block
+
+					if not block:
+
+						if (count == 0):
+						
+							data = bytearray() 				# Making the DATA Packet
+
+							data.append(0)
+							data.append(3)
+
+							b = bytearray(count.to_bytes(2, 'big')) # representing count as bytes big endian
+							data += b
+
+							sent = sock.sendto(data, addr)
+
+							data, addr = sock.recvfrom(MAXSIZE)
+
+							while( data[0] != 0 and data[1] != 4 and data[2] != b[0] and data[3] != b[1] ): # Wait for ACK
+								data, server_address = sock.recvfrom(MAXSIZE)	
+
+						print("Transfer complete")
+
+						file.close()
+						break
+
+					data = bytearray()
+
+					data.append(0)
+					data.append(3)
+
+					b = bytearray(count.to_bytes(2, 'big'))
+					data += b
+
+					data += block.encode()
+
+					sent = sock.sendto(data, addr) # Send the data
+
+					data, server_address = sock.recvfrom(MAXSIZE)
+
+					while( data[0] != 0 and data[1] != 4 and data[2] != b[0] and data[3] != b[1] ): # Wait for ACK
+						data, server_address = sock.recvfrom(MAXSIZE)	
+
+					if (count + 1 >= 60000):
+						count = 0
+					
+					else:
+						count += 1
 
 			else: #if mode is mail
 				
@@ -353,7 +428,7 @@ def main():
 					content = data[4:] 
 					file.write(content)
 
-					if len(data) < TERMINATING_DATA_LENGTH:
+					if (len(data) < TERMINATING_DATA_LENGTH):
 			
 						print("Transfer complete")
 
@@ -361,7 +436,35 @@ def main():
 						break
 
 			elif (mode == "netascii"): # if mode is netascii
-				pass
+
+				file = open(filename, "w")
+
+				print("Receiving file", filename)
+
+				while True:
+					# Wait for the data from the server
+					data, server = sock.recvfrom(600)
+
+					if server_error(data):
+
+						error_code = int.from_bytes(data[2:4], byteorder='big')
+
+						print(server_error_msg[error_code])
+
+						file.close()
+						break
+
+					send_ack(data[0:4], server)
+
+					content = data[4:]
+
+					file.write(content.decode())
+
+					if (len(data) < TERMINATING_DATA_LENGTH):
+						print("Transfer complete")
+						
+						file.close()
+						break
 
 			else: # if mode is mail
 				file = open(filename, "w")

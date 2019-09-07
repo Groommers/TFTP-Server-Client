@@ -116,7 +116,8 @@ def extract(data): # Get the filename and mode of the first data (RRQ or WRQ pac
 	mode = ""
 
 	i = i + 1
-	while (data[i] != 0):					# getting the mode of the data: netascii, octet (bynary) or mail
+	while (data[i] != 0):					# getting the mode of the data: netascii, octet (bynary) 
+
 		mode = mode + chr(data[i])
 
 		i = i + 1
@@ -246,7 +247,7 @@ def main():
 					else:
 						count += 1
 
-			elif (mode == "netascii"): # if mode is netascii
+			else (mode == "netascii"): # if mode is netascii
 
 				try:
 					file = open(filename, 'r')
@@ -324,80 +325,7 @@ def main():
 					else:
 						count += 1
 
-			else: #if mode is mail
-				
-				try:
-					file = open(filename, 'r')
-					
-				except: # No exist the file
-
-					error = bytearray()
-
-					error.append(0)
-					error.append(5)
-					error.append(0)
-					error.append(1)
-
-					error += bytearray("".encode('utf-8'))
-
-					error.append(0)
-
-					sent = sock.sendto(error, addr)
-
-					print("ERROR, File not found")
-					continue
-
-				count = 0 # Block number
-
-				while True: # Send the file in blocks
-
-					block = file.read(MAXSIZE) # read the block
-
-					if not block:
-
-						if (count == 0):
-
-							data = bytearray() 				# Making the DATA Packet
-
-							data.append(0)
-							data.append(3)
-
-							b = bytearray(count.to_bytes(2, 'big')) # representing count as bytes big endian
-							data += b
-
-							sent = sock.sendto(data, addr)
-
-							data, addr = sock.recvfrom(MAXSIZE)
-
-							while( data[0] != 0 and data[1] != 4 and data[2] != b[0] and data[3] != b[1] ): # Wait for ACK
-								data, server_address = sock.recvfrom(MAXSIZE)
-
-						print("Transfer complete")
-
-						file.close()
-						break
-
-					data = bytearray()
-
-					data.append(0)
-					data.append(3)
-
-					b = bytearray(count.to_bytes(2, 'big'))
-					data += b
-
-					data += block
-
-					sent = sock.sendto(data, addr) # Send the data
-
-					# Wait for the ACK
-					while( data[0] != 0 and data[1] != 4 and data[2] != b[0] and data[3] != b[1] ): # Wait for ACK
-						data, server_address = sock.recvfrom(MAXSIZE)
-
-					if (count + 1 >= 60000):
-						count = 0
-
-					else:
-						count += 1
+			
 
 		# WRQ----------------------------------------------------------------------------------------------------------------------
 		elif (data[0] == 0 and data[1] == 2): # if the first byte is 0 and the second byte is 2, then is WRQ
@@ -435,7 +363,7 @@ def main():
 						file.close()
 						break
 
-			elif (mode == "netascii"): # if mode is netascii
+			else (mode == "netascii"): # if mode is netascii
 
 				file = open(filename, "w")
 
@@ -466,31 +394,7 @@ def main():
 						file.close()
 						break
 
-			else: # if mode is mail
-				file = open(filename, "w")
-
-				while True:
-					# Wait for the data from the server
-					data, server = sock.recvfrom(600)
-
-					if server_error(data):
-
-						error_code = int.from_bytes(data[2:4], byteorder='big')
-						print(server_error_msg[error_code])
-
-						break
-
-					send_ack(data[0:4], server)
-
-					content = data[4:] 
-					file.write(content)
-
-					if len(data) < TERMINATING_DATA_LENGTH:
-						
-						print("Transfer complete")
-
-						file.close()
-						break
+			
 
 
 if __name__ == "__main__":

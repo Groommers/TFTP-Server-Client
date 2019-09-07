@@ -100,7 +100,7 @@ TFTP_MODES = {
 	'unknown': 0,
 	'netascii': 1,
 	'octet': 2,
-	'mail': 3}
+	'mail': 3} # not used
 
 # Map server error codes to messages [ Taken from RFC-1350 ]
 server_error_msg = {
@@ -202,13 +202,13 @@ def main():
 		print("Unknown mode - defaulting to [ RRQ ]")
 		typeR = "RRQ"
 
-	mode = input("insert mode (octet, netascii or mail): ")
+	mode = input("insert mode (octet or netascii): ")
 
 	if ( mode.lower() not in TFTP_MODES.keys() ):
 		print("Unknown mode - defaulting to [ netascii ]")
 		mode = "netascii"
 
-	filename = input("insert filename or mail recipient (example@gmail.com) if you want to send a mail: ")
+	filename = input("insert filename: ")
 	
 	server_address = (ip, 69)
 
@@ -445,71 +445,6 @@ def main():
 				sent = sock.sendto(data, server_address) # Send the data
 
 				data, server_address = sock.recvfrom(MAXSIZE)
-
-				while( data[0] != 0 and data[1] != 4 and data[2] != b[0] and data[3] != b[1] ): # Wait for ACK
-					data, server_address = sock.recvfrom(MAXSIZE)
-
-				if (count + 1 >= 60000):
-					count = 0
-
-				else:
-					count += 1
-
-		else:# mail -----------Here is diferent on filename, which must be an mail recipient, example@hostmail.com
-
-			try:
-				file = open(filename, "r")
-
-			except:
-				print("ERROR, File not found")
-				exit()
-
-			# Send request
-			send_rq(filename, mode, typeR)
-
-			print("Sending file")
-
-			count = 0 # Block number
-
-			while True: # Send the file in blocks
-
-				block = file.read(MAXSIZE) # read the block
-
-				if not block:
-
-					if (count == 0):
-						
-						data = bytearray()
-
-						data.append(0)
-						data.append(3)
-
-						b = bytearray(count.to_bytes(2, 'big'))
-						data += b
-
-						sent = sock.sendto(data, server_address)
-
-						data, server_address = sock.recvfrom(MAXSIZE)
-
-						while( data[0] != 0 and data[1] != 4 and data[2] != b[0] and data[3] != b[1] ): # Wait for ACK
-							data, server_address = sock.recvfrom(MAXSIZE)
-
-					print("Transfer complete")
-
-					file.close()
-					break 
-				
-				data = bytearray()
-
-				data.append(0)
-				data.append(3)
-
-				b = bytearray(count.to_bytes(2, 'big'))
-				data += b
-
-				data += block
-
-				sent = sock.sendto(data, server_address) # Send the data
 
 				while( data[0] != 0 and data[1] != 4 and data[2] != b[0] and data[3] != b[1] ): # Wait for ACK
 					data, server_address = sock.recvfrom(MAXSIZE)

@@ -19,9 +19,9 @@ WRQ: to Write Request
 
 RRQ: to Read Request
 
-Octet: to all Files, transfer in binary.
+octet: to all Files, transfer in binary.
 
-Netascii: Only to transfer Text Files.
+netascii: Only to transfer Text Files.
 
 
 Information Extracted from:

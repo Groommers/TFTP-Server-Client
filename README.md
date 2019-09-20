@@ -13,6 +13,12 @@ To see the process you can print the acks when they are delivered.
 Server Features:
 Listening the client's requests , send and receive files and control packages.
 
+Commands:
+WRQ: to Write Request
+RRQ: to Read Request
+Octet: to all Files, transfer in binary.
+Netascii: Only to transfer Text Files.
+
 Information Extracted from:
 
 http://tftpy.sourceforge.net/

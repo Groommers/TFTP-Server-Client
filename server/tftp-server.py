@@ -247,7 +247,7 @@ def main():
 					else:
 						count += 1
 
-			else (mode == "netascii"): # if mode is netascii
+			else : # if mode is netascii
 
 				try:
 					file = open(filename, 'r')

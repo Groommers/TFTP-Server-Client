@@ -7,7 +7,7 @@ Guiding us of RFC 1350 we create the formats of the Protcol TFTP packages using 
 Compile with: Python3
 
 Client Features:
-Send Requests and control packages (WRQ,RRQ,ACK,ERROR) and files to the server, and receive files in octet (binary) and netascii modes from the server and control packeges. The mail mode is obsolete and not used. 
+Send Requests and control packages (WRQ,RRQ,ACK,ERROR) and files to the server, and receive files in octet (binary) and netascii modes from the server and control packeges. The mail mode is obsolete and should not be implemented or used. 
 To see the process you can print the acks when they are delivered.
 
 Server Features:

@@ -363,7 +363,7 @@ def main():
 						file.close()
 						break
 
-			else (mode == "netascii"): # if mode is netascii
+			else : # if mode is netascii
 
 				file = open(filename, "w")
 

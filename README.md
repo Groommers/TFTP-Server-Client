@@ -13,3 +13,13 @@ To see the process you can print the acks when they are delivered.
 Server Features:
 Listening the client's requests , send and receive files and control packages.
 
+Information Extracted from:
+
+http://tftpy.sourceforge.net/
+https://es.wikipedia.org/wiki/TFTP
+https://github.com/pypxe/PyPXE
+http://www.faqs.org/rfcs/rfc1350.html
+http://www.faqs.org/rfcs/rfc2347.html
+http://www.faqs.org/rfcs/rfc2348.html
+http://www.faqs.org/rfcs/rfc2349.html
+http://www.faqs.org/rfcs/rfc768.html

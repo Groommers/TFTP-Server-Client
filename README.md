@@ -13,7 +13,7 @@ To see the process you can print the acks when they are delivered.
 Server Features:
 Listening the client's requests , send and receive files and control packages.
 
-Commands:
+Commands(Client):
 
 WRQ: to Write Request
 

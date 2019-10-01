@@ -10,6 +10,11 @@ Client Features:
 Send Requests and control packages (WRQ,RRQ,ACK,ERROR) and files to the server, and receive files in octet (binary) and netascii modes from the server and control packeges. The mail mode is obsolete and should not be implemented or used. 
 To see the process you can print the acks when they are delivered.
 
+In the code of the client you should change de variable "ip" from 'localhost' to the ip address of the host server.
+
+*The octet mode send and receive all types of files.
+*The netascii mode only send and receive text files.
+
 Server Features:
 Listening the client's requests , send and receive files and control packages.
 

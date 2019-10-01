@@ -1,8 +1,8 @@
 # TFTP-Server-Client
 
-Group Lambder conformed by: Daniel Berbesi, Cesar Salazar, Valentina Contreras and Saul Ugueto
+Group Lambder conformed by: Daniel Berbesi, Cesar Salazar, Valentina Contreras and Saul Ugueto.
 
-Guiding us of RFC 1350 we create the formats of the Protcol TFTP packages using byte array, which made it very intuitive to program
+Guiding us of RFC 1350 we create the formats of the Protcol TFTP packages using byte array, which made it very intuitive to program.
 
 Compile with: Python3
 

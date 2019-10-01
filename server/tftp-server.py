@@ -78,6 +78,7 @@ As shown above the protocol can be seen in action on the last 6 lines or so.
 
 PORT = 69
 MAXSIZE = 508
+MAXS = 512
 TERMINATING_DATA_LENGTH = 512
 
 TFTP_OPCODES = {
@@ -139,7 +140,6 @@ def send_ack(ack_data, server):
 
 	ack[0] = 0
 	ack[1] = TFTP_OPCODES['ack']
-
 	sock.sendto(ack, server)
 
 
@@ -164,7 +164,6 @@ def main():
 	while True:
 		data, addr = sock.recvfrom(MAXSIZE) #get a data from the port
 		print("\n{} from {}".format(data, addr))
-
 		#RRQ---------------------------------------------------------------------------------------------
 		if (data[0] == 0 and data[1] == 1): # if first byte is 0 and the second byte is 1, then is RRQ
 			
@@ -192,17 +191,17 @@ def main():
 					print("ERROR, File not found")
 					continue
 
-				count = 0 # Block number
+				count = 1 # Block number
 
 				print("Sending file", filename)
 
 				while True: # Send the file in blocks
 
-					block = file.read(MAXSIZE) # read the block
+					block = file.read(MAXS) # read the block
 
 					if not block:
 
-						if (count == 0):
+						if (count == 1):
 						
 							data = bytearray() 				# Making the DATA Packet
 
@@ -214,10 +213,10 @@ def main():
 
 							sent = sock.sendto(data, addr)
 
-							data, addr = sock.recvfrom(MAXSIZE)
+							data, addr = sock.recvfrom(MAXS)
 
 							while( data[0] != 0 and data[1] != 4 and data[2] != b[0] and data[3] != b[1] ): # Wait for ACK
-								data, server_address = sock.recvfrom(MAXSIZE)	
+								data, server_address = sock.recvfrom(MAXS)	
 
 						print("Transfer complete")
 
@@ -236,13 +235,13 @@ def main():
 
 					sent = sock.sendto(data, addr) # Send the data
 
-					data, server_address = sock.recvfrom(MAXSIZE)
+					data, server_address = sock.recvfrom(MAXS)
 
 					while( data[0] != 0 and data[1] != 4 and data[2] != b[0] and data[3] != b[1] ): # Wait for ACK
-						data, server_address = sock.recvfrom(MAXSIZE)	
+						data, server_address = sock.recvfrom(MAXS)	
 
 					if (count + 1 >= 60000):
-						count = 0
+						count = 1
 					
 					else:
 						count += 1
@@ -276,7 +275,7 @@ def main():
 
 				while True: # Send the file in blocks
 
-					block = file.read(MAXSIZE) # read the block
+					block = file.read(MAXS) # read the block
 
 					if not block:
 
@@ -292,10 +291,10 @@ def main():
 
 							sent = sock.sendto(data, addr)
 
-							data, addr = sock.recvfrom(MAXSIZE)
+							data, addr = sock.recvfrom(MAXS)
 
 							while( data[0] != 0 and data[1] != 4 and data[2] != b[0] and data[3] != b[1] ): # Wait for ACK
-								data, server_address = sock.recvfrom(MAXSIZE)	
+								data, server_address = sock.recvfrom(MAXS)	
 
 						print("Transfer complete")
 
@@ -314,10 +313,10 @@ def main():
 
 					sent = sock.sendto(data, addr) # Send the data
 
-					data, server_address = sock.recvfrom(MAXSIZE)
+					data, server_address = sock.recvfrom(MAXS)
 
 					while( data[0] != 0 and data[1] != 4 and data[2] != b[0] and data[3] != b[1] ): # Wait for ACK
-						data, server_address = sock.recvfrom(MAXSIZE)	
+						data, server_address = sock.recvfrom(MAXS)	
 
 					if (count + 1 >= 60000):
 						count = 0
@@ -329,9 +328,16 @@ def main():
 
 		# WRQ----------------------------------------------------------------------------------------------------------------------
 		elif (data[0] == 0 and data[1] == 2): # if the first byte is 0 and the second byte is 2, then is WRQ
-			
-			filename, mode = extract(data)
+			################################################
+			ack = bytearray(b'0000')
 
+			count = 0
+			ack = bytearray(count.to_bytes(4, 'big'))
+			ack[0] = 0
+			ack[1] = 4
+			sock.sendto(ack, addr) 
+			###############################################
+			filename, mode = extract(data)
 			if (mode == "octet"): # if mode is octet
 
 				file = open(filename, "wb")
@@ -350,9 +356,7 @@ def main():
 
 						file.close()
 						break
-
 					send_ack(data[0:4], server)
-
 					content = data[4:] 
 					file.write(content)
 

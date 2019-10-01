@@ -114,7 +114,7 @@ server_error_msg = {
 	7: "No such user."
 }
 
-ip = 'localhost'
+ip = '192.168.1.190'
 
 # Create a UDP socket and open the port 69				 # socket.SOCK_DGRAM: type of the connector, DGRAM = UDP , STREAM = TCP
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)	 # socket.AF_INET: the domain of the connector, in this case, an IPv4 connector
@@ -225,6 +225,7 @@ def main():
 			while True:
 				# Wait for the data from the server
 				data, server = sock.recvfrom(600)
+				print(data)
 
 				if (server_error(data)):
 					error_code = int.from_bytes(data[2:4], byteorder='big')
@@ -334,8 +335,10 @@ def main():
 			send_rq(filename, mode, typeR)
 
 			print("Sending file")
+			data, server_address = sock.recvfrom(MAXSIZE)
+			print(data)
 
-			count = 0 # Block number
+			count = 1 # Block number
 
 			while True: # Send the file in blocks
 
